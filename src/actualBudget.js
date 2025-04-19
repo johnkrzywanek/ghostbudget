@@ -17,20 +17,12 @@ async function getAccountBalances() {
 
         // Initialize the Actual API client
         await api.init({
-            // Replace these with your Actual Budget server details
             dataDir: '/Users/dmr/actualbudget/actual-data',
-            // This is the URL of your running server
             serverURL: process.env.ACTUAL_BUDGET_URL,
-            // This is the password you use to log into the server
             password: process.env.ACTUAL_BUDGET_PASS,
         });
 
         console.log('Successfully connected to Actual Budget server');
-
-        // Verify sync ID exists
-        if (!process.env.ACTUAL_BUDGET_SYNC_ID) {
-            throw new Error('ACTUAL_BUDGET_SYNC_ID environment variable is not set');
-        }
 
         console.log('Downloading budget data...');
         await api.downloadBudget(process.env.ACTUAL_BUDGET_SYNC_ID);
@@ -80,5 +72,6 @@ async function getAccountBalances() {
     }
 }
 
-// Run the function
-getAccountBalances();
+module.exports = {
+    getAccountBalances
+};
