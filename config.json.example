@@ -1,0 +1,12 @@
+{
+  "accounts": [
+    {
+      "ghostfolioName": "Savings Account",
+      "actualBudgetName": "Main Savings"
+    },
+    {
+      "ghostfolioName": "Investment Account",
+      "actualBudgetName": "Brokerage Account"
+    }
+  ]
+}

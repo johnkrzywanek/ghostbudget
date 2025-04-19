@@ -17,7 +17,7 @@ async function getAccountBalances() {
 
         // Initialize the Actual API client
         await api.init({
-            dataDir: '/Users/dmr/actualbudget/actual-data',
+            dataDir: process.env.ACTUAL_BUDGET_DATA_DIR,
             serverURL: process.env.ACTUAL_BUDGET_URL,
             password: process.env.ACTUAL_BUDGET_PASS,
         });
@@ -55,6 +55,7 @@ async function getAccountBalances() {
         // Close the connection
         await api.shutdown();
         console.log('Connection closed successfully');
+        return balances;
     } catch (error) {
         console.error('Error Details:', {
             message: error.message,
