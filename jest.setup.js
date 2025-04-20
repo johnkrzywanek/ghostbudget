@@ -6,3 +6,6 @@ jest.spyOn(console, 'warn').mockImplementation(() => { });
 beforeEach(() => {
     jest.clearAllMocks();
 });
+
+// Set test environment
+process.env.NODE_ENV = 'test';
