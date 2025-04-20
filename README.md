@@ -1,6 +1,6 @@
 # GhostBudget
 
-GhostBudget is a Node.js application that synchronizes account balances between Actual Budget and Ghostfolio. It automatically fetches your account balances from Actual Budget and updates the corresponding accounts in Ghostfolio.
+GhostBudget is a Node.js application that synchronizes account balances between [Actual Budget](https://github.com/actualbudget/actual) and [Ghostfolio](https://github.com/ghostfolio/ghostfolio). It automatically fetches your account balances from Actual Budget and updates the corresponding accounts in Ghostfolio. Big thanks to authors and contributors to both projects! 
 
 ## Features
 
