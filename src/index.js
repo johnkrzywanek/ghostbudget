@@ -1,22 +1,36 @@
 const {getAccountBalances} = require('./actualBudget');
 const ghostfolio = require('./ghostfolio');
+const logger = require('./logger');
 
-async function syncBalances() {
+async function sync() {
     try {
-        // 1. Get balances from Actual Budget
-        const actualBalances = await getAccountBalances();
-        if (!actualBalances) {
-            throw new Error('Failed to get balances from Actual Budget');
+        logger.info('Starting sync process...');
+
+        // Get balances from Actual Budget
+        logger.info('Fetching balances from Actual Budget...');
+        const balances = await getAccountBalances();
+
+        if (!balances || balances.length === 0) {
+            logger.error('No balances received from Actual Budget');
+            process.exit(1);
         }
 
-        // 2-5. Sync balances to Ghostfolio
-        await ghostfolio.syncAccountBalances(actualBalances);
+        logger.info(`Found ${balances.length} accounts in Actual Budget`);
 
-        console.log('Successfully completed balance sync');
+        // Sync balances to Ghostfolio
+        logger.info('Syncing balances to Ghostfolio...');
+        await ghostfolio.syncAccountBalances(balances);
+
+        logger.info('Sync completed successfully!');
     } catch (error) {
-        console.error('Failed to sync balances:', error.message);
+        logger.error('Sync failed:', {error: error.message, stack: error.stack});
         process.exit(1);
     }
 }
 
-syncBalances();
+// Run sync if this file is run directly
+if (require.main === module) {
+    sync();
+}
+
+module.exports = {sync};

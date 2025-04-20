@@ -1,5 +1,6 @@
 require('dotenv').config();
 const api = require('@actual-app/api');
+const logger = require('./logger');
 
 async function getAccountBalances() {
     try {
@@ -11,9 +12,10 @@ async function getAccountBalances() {
             throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
         }
 
-        console.log('Initializing Actual Budget API...');
-        console.log('Server URL:', process.env.ACTUAL_BUDGET_URL);
-        console.log('Sync ID:', process.env.ACTUAL_BUDGET_SYNC_ID);
+        logger.debug('Initializing Actual Budget API...', {
+            serverURL: process.env.ACTUAL_BUDGET_URL,
+            syncId: process.env.ACTUAL_BUDGET_SYNC_ID
+        });
 
         // Initialize the Actual API client
         await api.init({
@@ -22,19 +24,19 @@ async function getAccountBalances() {
             password: process.env.ACTUAL_BUDGET_PASS,
         });
 
-        console.log('Successfully connected to Actual Budget server');
+        logger.info('Successfully connected to Actual Budget server');
 
-        console.log('Downloading budget data...');
+        logger.debug('Downloading budget data...');
         await api.downloadBudget(process.env.ACTUAL_BUDGET_SYNC_ID);
-        console.log('Budget data downloaded successfully');
+        logger.debug('Budget data downloaded successfully');
 
         // Get all accounts
-        console.log('Fetching accounts...');
+        logger.debug('Fetching accounts...');
         const accounts = await api.getAccounts();
-        console.log(`Found ${accounts.length} accounts`);
+        logger.info(`Found ${accounts.length} accounts`);
 
         // Get balances for all accounts
-        console.log('Fetching account balances...');
+        logger.debug('Fetching account balances...');
         const balances = await Promise.all(
             accounts.map(async (account) => {
                 const balance = await api.getAccountBalance(account.id);
@@ -46,29 +48,37 @@ async function getAccountBalances() {
             })
         );
 
-        // Print the results
-        console.log('\nAccount Balances:');
-        balances.forEach(account => {
-            console.log(`${account.name} (${account.type}): $${account.balance.toFixed(2)}`);
+        // Log the results
+        logger.info('Account Balances:', {
+            balances: balances.map(account => ({
+                name: account.name,
+                type: account.type,
+                balance: `$${account.balance.toFixed(2)}`
+            }))
         });
 
         // Close the connection
         await api.shutdown();
-        console.log('Connection closed successfully');
+        logger.debug('Connection closed successfully');
         return balances;
     } catch (error) {
-        console.error('Error Details:', {
-            message: error.message,
-            stack: error.stack,
-            code: error.code
+        logger.error('Error fetching account balances:', {
+            error: {
+                message: error.message,
+                stack: error.stack,
+                code: error.code
+            }
         });
 
         if (error.message.includes('Could not get remote files')) {
-            console.error('\nTroubleshooting tips:');
-            console.error('1. Verify your Actual Budget server is running at:', process.env.ACTUAL_BUDGET_URL);
-            console.error('2. Check if your sync ID is correct');
-            console.error('3. Ensure your password is correct');
-            console.error('4. Verify your Actual Budget server version is compatible with this API version');
+            logger.error('Troubleshooting tips:', {
+                tips: [
+                    `Verify your Actual Budget server is running at: ${process.env.ACTUAL_BUDGET_URL}`,
+                    'Check if your sync ID is correct',
+                    'Ensure your password is correct',
+                    'Verify your Actual Budget server version is compatible with this API version'
+                ]
+            });
         }
     }
 }

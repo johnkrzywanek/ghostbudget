@@ -4,6 +4,8 @@
   "description": "Sync Actual Budget accounts with Ghostfolio",
   "main": "src/index.js",
   "scripts": {
+    "sync": "node src/index.js",
+    "sync:debug": "LOG_LEVEL=debug node src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -13,7 +15,8 @@
   "dependencies": {
     "@actual-app/api": "^25.4.0",
     "axios": "^1.6.7",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",

@@ -17,6 +17,13 @@ GhostBudget is a Node.js application that synchronizes account balances between 
 - A Ghostfolio instance
 - Access tokens/credentials for both services
 
+The script will:
+1. Fetch account balances from Actual Budget
+2. Authenticate with Ghostfolio
+3. Get the current account list from Ghostfolio
+4. Map accounts between the two systems
+5. Update balances in Ghostfolio
+
 ## Installation
 
 1. Clone the repository:
@@ -69,18 +76,87 @@ The `config.json` file maps accounts between Actual Budget and Ghostfolio. Examp
 
 ## Usage
 
-Run the synchronization:
+### Running the Sync
+
+You can run the synchronization with different log levels:
 
 ```bash
-node src/index.js
+# Normal operation (info level logs)
+npm run sync
+
+# With debug information
+LOG_LEVEL=debug npm run sync
+
+# Only show errors
+LOG_LEVEL=error npm run sync
 ```
 
-The script will:
-1. Fetch account balances from Actual Budget
-2. Authenticate with Ghostfolio
-3. Get the current account list from Ghostfolio
-4. Map accounts between the two systems
-5. Update balances in Ghostfolio
+### Log Levels
+
+- `error`: Only logs errors
+- `warn`: Logs errors and warnings
+- `info`: Normal operational messages (default)
+- `debug`: Detailed debugging information
+
+### Log Files
+
+Logs are written to:
+- `logs/combined.log`: Contains all logs
+- `logs/error.log`: Contains only error logs
+- Console: Shows colored output for development
+
+## Automated Execution
+
+### Using Cron
+
+Add this to your crontab to run it automatically:
+
+```bash
+# Run every hour
+0 * * * * cd /path/to/ghostbudget && LOG_LEVEL=info /usr/local/bin/npm run sync
+```
+
+### Using Systemd
+
+Create a service file (`/etc/systemd/system/ghostbudget-sync.service`):
+
+```ini
+[Unit]
+Description=Sync Actual Budget with Ghostfolio
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/path/to/ghostbudget
+Environment=LOG_LEVEL=info
+ExecStart=/usr/local/bin/npm run sync
+User=youruser
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Create a timer file (`/etc/systemd/system/ghostbudget-sync.timer`):
+
+```ini
+[Unit]
+Description=Run Ghostbudget sync every hour
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Unit=ghostbudget-sync.service
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable and start the timer:
+```bash
+sudo systemctl enable ghostbudget-sync.timer
+sudo systemctl start ghostbudget-sync.timer
+```
+
 
 ### Balance Conversion
 
