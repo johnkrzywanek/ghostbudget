@@ -22,6 +22,11 @@ class GhostfolioAPI {
         accessToken: process.env.GHOSTFOLIO_TOKEN,
       });
 
+      if (!res?.data?.authToken?.length) {
+        logger.debug(`Ghostfolio auth responded with status ${res.status}`, res.data);
+        throw new Error('Failed to get access token from Ghostfolio');
+      }
+
       this.accessToken = res.data.authToken;
       logger.info('Successfully authenticated with Ghostfolio');
     } catch (error) {
