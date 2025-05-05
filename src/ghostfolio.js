@@ -6,7 +6,7 @@ const logger = require('./logger');
 
 class GhostfolioAPI {
   constructor() {
-    this.baseURL = process.env.GHOSTFOLIO_URL;
+    this.baseURL = process.env.GHOSTFOLIO_URL.replace(/\/$/, '');
     this.accessToken = null;
     this.configPath = path.join(__dirname, '..', 'config.json');
   }
