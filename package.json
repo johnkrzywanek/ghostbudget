@@ -27,7 +27,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "jest": "^30.0.5",
-    "nock": "^14.0.7",
+    "nock": "^14.0.8",
     "prettier": "^3.6.2"
   }
 }
