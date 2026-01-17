@@ -16,7 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@actual-app/api": "^25.7.1",
+    "@actual-app/api": "^26.1.0",
     "axios": "^1.11.0",
     "dotenv": "^17.2.1",
     "winston": "^3.17.0"
