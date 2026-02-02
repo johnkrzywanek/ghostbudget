@@ -65,13 +65,13 @@ class GhostfolioAPI {
     }
   }
 
-  async updateAccountBalance(ghostfolioAccount, actualBudgetBalance) {
+  async updateAccountBalance(ghostfolioAccount, actualBudgetBalance, factor = 1) {
     if (!this.accessToken) {
       throw new Error('Not authenticated. Call authenticate() first');
     }
 
     try {
-      const newBalance = actualBudgetBalance / 100;
+      const newBalance = actualBudgetBalance * factor / 100;
       logger.debug('Updating account balance:', {
         account: ghostfolioAccount.name,
         oldBalance: ghostfolioAccount.balance,
@@ -137,7 +137,13 @@ class GhostfolioAPI {
           continue;
         }
 
-        await this.updateAccountBalance(ghostfolioAccount, actualAccount.balance);
+        let factor = mapping.factor;
+        if (factor !== undefined && isNaN(factor)) {
+          logger.warn(`The specified factor (${factor}) is not a number`);
+          continue;
+        }
+
+        await this.updateAccountBalance(ghostfolioAccount, actualAccount.balance, mapping.factor);
       }
 
       logger.info('Successfully synced all account balances');
