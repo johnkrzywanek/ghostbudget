@@ -71,7 +71,7 @@ class GhostfolioAPI {
     }
 
     try {
-      const newBalance = actualBudgetBalance * factor / 100;
+      const newBalance = (actualBudgetBalance * factor) / 100;
       logger.debug('Updating account balance:', {
         account: ghostfolioAccount.name,
         oldBalance: ghostfolioAccount.balance,
