@@ -113,14 +113,15 @@ class GhostfolioAPI {
   }
 
   async syncAccountBalances(actualBalances) {
-    try {
-      await this.authenticate();
-      const ghostfolioAccounts = await this.getGhostfolioAccounts();
+    await this.authenticate();
+    const ghostfolioAccounts = await this.getGhostfolioAccounts();
 
-      logger.debug('Reading account mappings from config...');
-      const config = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+    logger.debug('Reading account mappings from config...');
+    const config = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+    let errors = false;
 
-      for (const mapping of config.accounts) {
+    for (const mapping of config.accounts) {
+      try {
         const actualAccount = actualBalances.find((acc) => acc.name === mapping.actualBudgetName);
 
         const ghostfolioAccount = ghostfolioAccounts.find(
@@ -128,34 +129,34 @@ class GhostfolioAPI {
         );
 
         if (!actualAccount) {
-          logger.warn(`No matching Actual Budget account found for ${mapping.actualBudgetName}`);
-          continue;
+          throw new Error(
+            `No matching Actual Budget account found for ${mapping.actualBudgetName}`
+          );
         }
 
         if (!ghostfolioAccount) {
-          logger.warn(`No matching Ghostfolio account found for ${mapping.ghostfolioName}`);
-          continue;
+          throw new Error(`No matching Ghostfolio account found for ${mapping.ghostfolioName}`);
         }
 
         let factor = mapping.factor;
         if (factor !== undefined && !Number.isFinite(factor)) {
-          logger.error(`The specified factor (${factor}) is not a number`);
-          continue;
+          throw new Error(
+            `Failed to sync ${mapping.actualBudgetName}: The specified factor (${factor}) is not a number`
+          );
         }
 
         await this.updateAccountBalance(ghostfolioAccount, actualAccount.balance, mapping.factor);
+      } catch (e) {
+        console.error(e.message || `${e}`);
+        errors = true;
       }
-
-      logger.info('Successfully synced all account balances');
-    } catch (error) {
-      logger.error('Failed to sync account balances:', {
-        error: {
-          message: error.message,
-          stack: error.stack,
-        },
-      });
-      throw error;
     }
+
+    if (errors) {
+      throw new Error('Some accounts could not be synced');
+    }
+
+    logger.info('Successfully synced all account balances');
   }
 }
 
