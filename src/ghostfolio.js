@@ -138,8 +138,8 @@ class GhostfolioAPI {
         }
 
         let factor = mapping.factor;
-        if (factor !== undefined && isNaN(factor)) {
-          logger.warn(`The specified factor (${factor}) is not a number`);
+        if (factor !== undefined && !Number.isFinite(factor)) {
+          logger.error(`The specified factor (${factor}) is not a number`);
           continue;
         }
 
