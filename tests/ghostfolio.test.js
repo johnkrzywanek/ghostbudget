@@ -34,8 +34,13 @@ describe('ghostfolio', () => {
   describe('syncAccountBalances', () => {
     const actualBalances = [
       {
-        name: 'Test Account AB',
+        name: 'Main Savings',
         balance: 100012,
+        type: 'checking',
+      },
+      {
+        name: 'Brokerage Account',
+        balance: 100084,
         type: 'checking',
       },
     ];
@@ -56,7 +61,15 @@ describe('ghostfolio', () => {
           accounts: [
             {
               id: '123',
-              name: 'Test Account',
+              name: 'Savings Account',
+              currency: 'USD',
+              comment: null,
+              isExcluded: false,
+              platformId: 'platform-123',
+            },
+            {
+              id: '321',
+              name: 'Investment Account',
               currency: 'USD',
               comment: null,
               isExcluded: false,
@@ -73,8 +86,69 @@ describe('ghostfolio', () => {
         })
         .matchHeader('Authorization', 'Bearer test-token')
         .reply(200, { success: true });
+      nock(baseUrl)
+        .put('/api/v1/account/321', (body) => {
+          expect(body.balance).toBe(1000.84);
+          return true;
+        })
+        .matchHeader('Authorization', 'Bearer test-token')
+        .reply(200, { success: true });
 
       await ghostfolio.syncAccountBalances(actualBalances);
+    });
+
+    it('should not fail completely when a single account cannot sync', async () => {
+      // Auth request
+      nock(baseUrl)
+        .post('/api/v1/auth/anonymous', {
+          accessToken: 'test-token',
+        })
+        .reply(200, { authToken: 'test-token' });
+
+      // Get accounts request
+      nock(baseUrl)
+        .get('/api/v1/account')
+        .matchHeader('Authorization', 'Bearer test-token')
+        .reply(200, {
+          accounts: [
+            {
+              id: '123',
+              name: 'Savings Account',
+              currency: 'USD',
+              comment: null,
+              isExcluded: false,
+              platformId: 'platform-123',
+            },
+            {
+              id: '321',
+              name: 'Investment Account',
+              currency: 'USD',
+              comment: null,
+              isExcluded: false,
+              platformId: 'platform-123',
+            },
+          ],
+        });
+
+      // Update balance request
+      nock(baseUrl)
+        .put('/api/v1/account/123', (body) => {
+          expect(body.balance).toBe(1000.12);
+          return true;
+        })
+        .matchHeader('Authorization', 'Bearer test-token')
+        .reply(500, { success: false });
+      nock(baseUrl)
+        .put('/api/v1/account/321', (body) => {
+          expect(body.balance).toBe(1000.84);
+          return true;
+        })
+        .matchHeader('Authorization', 'Bearer test-token')
+        .reply(200, { success: true });
+
+      await expect(ghostfolio.syncAccountBalances(actualBalances)).rejects.toThrow(
+        'Some accounts could not be synced'
+      );
     });
   });
 
