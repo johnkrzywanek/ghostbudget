@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "eslint": "^9.32.0",
+    "eslint": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "jest": "^30.0.5",
