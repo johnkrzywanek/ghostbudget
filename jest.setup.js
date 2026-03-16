@@ -1,3 +1,8 @@
+// Mock browser globals for @actual-app/api
+global.navigator = {
+  userAgent: 'node.js',
+};
+
 // Log when mocks are created
 jest.spyOn(console, 'log').mockImplementation(() => {});
 jest.spyOn(console, 'error').mockImplementation(() => {});

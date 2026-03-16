@@ -43,7 +43,6 @@ async function getAccountBalances() {
         return {
           name: account.name,
           balance: balance,
-          type: account.type,
         };
       })
     );
@@ -52,7 +51,6 @@ async function getAccountBalances() {
     logger.info('Account Balances:', {
       balances: balances.map((account) => ({
         name: account.name,
-        type: account.type,
         balance: `$${account.balance.toFixed(2)}`,
       })),
     });

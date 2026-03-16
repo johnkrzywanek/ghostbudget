@@ -36,12 +36,10 @@ describe('ghostfolio', () => {
       {
         name: 'Main Savings',
         balance: 100012,
-        type: 'checking',
       },
       {
         name: 'Brokerage Account',
         balance: 100084,
-        type: 'checking',
       },
     ];
 
