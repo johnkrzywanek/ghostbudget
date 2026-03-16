@@ -7,4 +7,10 @@ module.exports = {
   verbose: true,
   // Add this to see what's happening with the mocks
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  // TypeScript support
+  preset: 'ts-jest',
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+  },
+  moduleFileExtensions: ['ts', 'js', 'json'],
 };
