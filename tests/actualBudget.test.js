@@ -29,13 +29,13 @@ describe('actualBudget', () => {
       // Mock successful API responses
       api.init.mockResolvedValue();
       api.downloadBudget.mockResolvedValue();
-      api.getAccounts.mockResolvedValue([{ id: '1', name: 'Checking', type: 'checking' }]);
+      api.getAccounts.mockResolvedValue([{ id: '1', name: 'Checking' }]);
       api.getAccountBalance.mockResolvedValue(100012);
       api.shutdown.mockResolvedValue();
 
       const balances = await actualBudget.getAccountBalances();
 
-      expect(balances).toEqual([{ name: 'Checking', balance: 100012, type: 'checking' }]);
+      expect(balances).toEqual([{ name: 'Checking', balance: 100012 }]);
     });
 
     it('should return undefined when missing environment variables', async () => {
