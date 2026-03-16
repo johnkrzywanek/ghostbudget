@@ -54,6 +54,71 @@ describe('ghostfolio', () => {
             expect(scope.isDone()).toBeTruthy();
             expect(logger.info).toHaveBeenCalledWith('Successfully synced all account balances');
         });
+
+        it('should handle errors for individual accounts', async () => {
+            const configWithMissingAccount = {
+                accounts: [
+                    {
+                        actualBudgetName: 'NonExistent',
+                        ghostfolioName: 'Ghost Checking',
+                    },
+                    {
+                        actualBudgetName: 'Savings',
+                        ghostfolioName: 'Ghost Savings',
+                    },
+                ],
+            };
+
+            (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(configWithMissingAccount));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            nock(baseUrl)
+                .post('/api/v1/auth/anonymous')
+                .reply(200, { authToken: 'test-token' })
+                .get('/api/v1/account')
+                .reply(200, { accounts: mockGhostfolioAccounts })
+                .put(/\/api\/v1\/account\/.*/)
+                .reply(200);
+
+            await expect(ghostfolio.syncAccountBalances(mockActualBalances)).rejects.toThrow(
+                'Some accounts could not be synced'
+            );
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should validate factor parameter', async () => {
+            const configWithInvalidFactor = {
+                accounts: [
+                    {
+                        actualBudgetName: 'Checking',
+                        ghostfolioName: 'Ghost Checking',
+                        factor: 'invalid' as any,
+                    },
+                ],
+            };
+
+            (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(configWithInvalidFactor));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            nock(baseUrl)
+                .post('/api/v1/auth/anonymous')
+                .reply(200, { authToken: 'test-token' })
+                .get('/api/v1/account')
+                .reply(200, { accounts: mockGhostfolioAccounts });
+
+            await expect(ghostfolio.syncAccountBalances(mockActualBalances)).rejects.toThrow(
+                'Some accounts could not be synced'
+            );
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('is not a number')
+            );
+            consoleErrorSpy.mockRestore();
+        });
     });
 
     describe('authenticate', () => {
@@ -70,6 +135,14 @@ describe('ghostfolio', () => {
         it('should throw error when token is missing', async () => {
             delete process.env.GHOSTFOLIO_TOKEN;
             await expect(ghostfolio.authenticate()).rejects.toThrow('Missing GHOSTFOLIO_TOKEN');
+        });
+
+        it('should throw error when auth response has no token', async () => {
+            nock(baseUrl)
+                .post('/api/v1/auth/anonymous')
+                .reply(200, { authToken: '' });
+
+            await expect(ghostfolio.authenticate()).rejects.toThrow('Failed to get access token');
         });
     });
 
@@ -106,6 +179,19 @@ describe('ghostfolio', () => {
                 .reply(200);
 
             await ghostfolio.updateAccountBalance(account, 100012);
+            expect(logger.info).toHaveBeenCalledWith(
+                `Successfully updated balance for account ${account.name}`
+            );
+        });
+
+        it('should update balance with factor', async () => {
+            const account = mockGhostfolioAccounts[0];
+
+            nock(baseUrl)
+                .put(`/api/v1/account/${account.id}`)
+                .reply(200);
+
+            await ghostfolio.updateAccountBalance(account, 100000, 2);
             expect(logger.info).toHaveBeenCalledWith(
                 `Successfully updated balance for account ${account.name}`
             );

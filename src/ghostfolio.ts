@@ -10,7 +10,7 @@ class GhostfolioAPI {
     private configPath: string;
 
     constructor() {
-        this.baseURL = process.env.GHOSTFOLIO_URL || '';
+        this.baseURL = (process.env.GHOSTFOLIO_URL || '').replace(/\/$/, '');
         this.accessToken = null;
         this.configPath = path.join(__dirname, '..', 'config.json');
     }
@@ -25,6 +25,11 @@ class GhostfolioAPI {
             const res = await axios.post(`${this.baseURL}/api/v1/auth/anonymous`, {
                 accessToken: process.env.GHOSTFOLIO_TOKEN,
             });
+
+            if (!res?.data?.authToken?.length) {
+                logger.debug(`Ghostfolio auth responded with status ${res.status}`, res.data);
+                throw new Error('Failed to get access token from Ghostfolio');
+            }
 
             this.accessToken = res.data.authToken;
             logger.info('Successfully authenticated with Ghostfolio');
@@ -69,14 +74,15 @@ class GhostfolioAPI {
 
     async updateAccountBalance(
         ghostfolioAccount: GhostfolioAccount,
-        actualBudgetBalance: number
+        actualBudgetBalance: number,
+        factor: number = 1
     ): Promise<GhostfolioAccount> {
         if (!this.accessToken) {
             throw new Error('Not authenticated. Call authenticate() first');
         }
 
         try {
-            const newBalance = actualBudgetBalance / 100;
+            const newBalance = (actualBudgetBalance * factor) / 100;
             logger.debug('Updating account balance:', {
                 account: ghostfolioAccount.name,
                 oldBalance: ghostfolioAccount.balance,
@@ -113,42 +119,50 @@ class GhostfolioAPI {
     }
 
     async syncAccountBalances(actualBalances: AccountBalance[]): Promise<void> {
-        try {
-            await this.authenticate();
-            const ghostfolioAccounts = await this.getGhostfolioAccounts();
+        await this.authenticate();
+        const ghostfolioAccounts = await this.getGhostfolioAccounts();
 
-            logger.debug('Reading account mappings from config...');
-            const config: Config = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+        logger.debug('Reading account mappings from config...');
+        const config: Config = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+        let errors = false;
 
-            for (const mapping of config.accounts) {
+        for (const mapping of config.accounts) {
+            try {
                 const actualAccount = actualBalances.find((acc) => acc.name === mapping.actualBudgetName);
+
                 const ghostfolioAccount = ghostfolioAccounts.find(
                     (acc) => acc.name === mapping.ghostfolioName
                 );
 
                 if (!actualAccount) {
-                    logger.warn(`No matching Actual Budget account found for ${mapping.actualBudgetName}`);
-                    continue;
+                    throw new Error(
+                        `No matching Actual Budget account found for ${mapping.actualBudgetName}`
+                    );
                 }
 
                 if (!ghostfolioAccount) {
-                    logger.warn(`No matching Ghostfolio account found for ${mapping.ghostfolioName}`);
-                    continue;
+                    throw new Error(`No matching Ghostfolio account found for ${mapping.ghostfolioName}`);
                 }
 
-                await this.updateAccountBalance(ghostfolioAccount, actualAccount.balance);
-            }
+                let factor = mapping.factor;
+                if (factor !== undefined && !Number.isFinite(factor)) {
+                    throw new Error(
+                        `Failed to sync ${mapping.actualBudgetName}: The specified factor (${factor}) is not a number`
+                    );
+                }
 
-            logger.info('Successfully synced all account balances');
-        } catch (error) {
-            logger.error('Failed to sync account balances:', {
-                error: {
-                    message: error instanceof Error ? error.message : 'Unknown error',
-                    stack: error instanceof Error ? error.stack : undefined,
-                },
-            });
-            throw error;
+                await this.updateAccountBalance(ghostfolioAccount, actualAccount.balance, mapping.factor);
+            } catch (e) {
+                console.error((e as Error).message || `${e}`);
+                errors = true;
+            }
         }
+
+        if (errors) {
+            throw new Error('Some accounts could not be synced');
+        }
+
+        logger.info('Successfully synced all account balances');
     }
 }
 

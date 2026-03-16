@@ -12,13 +12,13 @@ export async function getAccountBalances(): Promise<AccountBalance[] | undefined
         }
 
         logger.debug('Initializing Actual Budget API...', {
-            serverURL: process.env.ACTUAL_BUDGET_URL,
+            serverURL: process.env.ACTUAL_BUDGET_URL!.replace(/\/$/, ''),
             syncId: process.env.ACTUAL_BUDGET_SYNC_ID,
         });
 
         await api.init({
             dataDir: process.env.ACTUAL_BUDGET_DATA_DIR,
-            serverURL: process.env.ACTUAL_BUDGET_URL!,
+            serverURL: process.env.ACTUAL_BUDGET_URL!.replace(/\/$/, ''),
             password: process.env.ACTUAL_BUDGET_PASS!,
         });
 

@@ -16,6 +16,7 @@ export interface GhostfolioAccount {
 export interface ConfigMapping {
     actualBudgetName: string;
     ghostfolioName: string;
+    factor?: number;
 }
 
 export interface Config {
